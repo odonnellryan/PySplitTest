@@ -35,38 +35,41 @@ class NewTest:
         for value in values:
             m = sha256()
             m.update(value.encode('utf-8'))
-            hash = m.hexdigest()
+            hash_string = m.hexdigest()
             clicks, shows, weight = 1, 1, 1
-            option, created = Option.get_or_create(hash=hash,test = self.test, defaults={'clicks': clicks, 'shows': shows, 'weight': weight,
-                                                               'test': self.test})
-            self.options[hash] = {
-                'value': value.format(hash=hash),
+            option, created = Option.get_or_create(hash=hash_string, test=self.test,
+                                                   defaults={'clicks': clicks, 'shows': shows, 'weight': weight,
+                                                             'test': self.test})
+            self.options[hash_string] = {
+                'value': value.format(hash=hash_string),
                 'data': {'clicks': option.clicks, 'shows': option.shows, 'weight': option.weight}
             }
 
-    def set_weight(self, hash):
-        self.options[hash]['data']['weight'] = self.options[hash]['data']['clicks'] / self.options[hash]['data']['shows']
+    def set_weight(self, hash_string):
+        self.options[hash_string]['data']['weight'] = (self.options[hash_string]['data']['clicks'] /
+                                                       self.options[hash_string]['data']['shows'])
 
-    def show_option(self, hash):
-        self.options[hash]['data']['shows'] += 1
-        self.set_weight(hash)
-        Option.update(self.options[hash]['data']).where(Option.hash==hash)
+    def show_option(self, hash_string):
+        self.options[hash_string]['data']['shows'] += 1
+        self.set_weight(hash_string)
+        Option.update(**self.options[hash_string]['data']).where(Option.hash == hash_string)
 
-    def click_option(self, hash):
-        if hash in self.options:
-            self.options[hash]['data']['clicks'] += 1
-            self.set_weight(hash)
-            Option.update(self.options[hash]['data']).where(Option.hash == hash)
+    def click_option(self, hash_string):
+        if hash_string in self.options:
+            self.options[hash_string]['data']['clicks'] += 1
+            self.set_weight(hash_string)
+            Option.update(**self.options[hash_string]['data']).where(Option.hash == hash_string)
 
     def get_option(self):
-        if random.randint(0,0) < 1:
-            hash = random.choice(list(self.options.keys()))
+        if random.randint(0, 0) < 1:
+            hash_string = random.choice(list(self.options.keys()))
         else:
             options = self.test.options.order_by(Option.weight.desc())
-            hash = options.get().hash
-        self.show_option(hash)
-        value = self.options[hash]['value']
+            hash_string = options.get().hash
+        self.show_option(hash_string)
+        value = self.options[hash_string]['value']
         return value
+
 
 def create_tables():
     database.connect()
@@ -76,5 +79,6 @@ def create_tables():
             database.create_table(table)
         except OperationalError:
             pass
+
 
 create_tables()
